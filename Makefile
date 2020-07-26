@@ -11,6 +11,15 @@ clean:
 save: save-fish save-vim save-bash
 load: load-fish load-vim load-bash
 
+# Remove backups of loaded dotfiles here:
+commit:
+	rm -f -v ~/.config/fish/config.fish~
+	rm -f -v ~/.config/fish/fish_variables~
+	rm -f -v ~/.config/nvim/init.vim~
+	rm -f -v -r ~/.config/nvim/autoload~
+	rm -f -v ~/.vimrc~
+	rm -f -v -r ~/.vim/autoload~
+
 save-fish: init-save-dir
 	echo "Saving Fish Config..."
 	cp -v ~/.config/fish/config.fish ./backup
@@ -18,8 +27,8 @@ save-fish: init-save-dir
 load-fish: unzip
 	echo "Restoring Fish Config..."
 	mkdir -v -p ~/.config/fish
-	cp -v ./backup/config.fish ~/.config/fish/config.fish
-	cp -v ./backup/fish_variables ~/.config/fish/fish_variables
+	cp -v -b ./backup/config.fish ~/.config/fish/config.fish
+	cp -v -b ./backup/fish_variables ~/.config/fish/fish_variables
 
 save-vim: init-save-dir
 	echo "Saving Vim Config..."
@@ -28,20 +37,23 @@ save-vim: init-save-dir
 load-vim: unzip
 	echo "Restoring Vim Config..."
 	mkdir -p ~/.config/nvim
-	cp -v ./backup/init.vim ~/.config/nvim/init.vim
-	cp -v -r ./backup/autoload ~/.config/nvim/autoload
+	cp -v -b ./backup/init.vim ~/.config/nvim/init.vim
+	mv -v -f ~/.config/nvim/autoload ~/.config/nvim/autoload~
+	cp -v -r ./backup/autoload ~/.config/nvim
+	mv -v -f ~/.vimrc ~/.vimrc~
 	ln -v -s ~/.config/nvim/init.vim ~/.vimrc 
 	mkdir -v -p ~/.vim
+	mv -v -f ~/.vim/autoload ~/.vim/autoload~
 	ln -v -s ~/.config/nvim/autoload ~/.vim/autoload
 
 save-bash: init-save-dir
 	echo "Saving Bash Config..."
-	cp -v ~/.bashrc ./backup
-	cp -v ~/.profile ./backup
+	cp -v -b ~/.bashrc ./backup
+	cp -v -b ~/.profile ./backup
 load-bash: unzip
 	echo "Restoring Bash Config..."
-	cp -v ./backup/.bashrc ~/.bashrc
-	cp -v ./backup/.profile ~/.profile
+	cp -v -b ./backup/.bashrc ~/.bashrc
+	cp -v -b ./backup/.profile ~/.profile
 
 init-save-dir:
 	mkdir -p -v ./backup
