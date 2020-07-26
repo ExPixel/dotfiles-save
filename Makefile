@@ -1,48 +1,63 @@
 DROPBOX_ACCESS_TOKEN=`cat dropbox-access-token`
-.PHONY: default
 
-default: save
+.PHONY: default clean
+
+default: zip
+
+clean:
+	rm -r -f -v ./backup
+	rm -f -v backup.zip
 
 save: save-fish save-vim save-bash
-	make zip
-	rm -r ./stored
 load: load-fish load-vim load-bash
 
 save-fish: init-save-dir
 	echo "Saving Fish Config..."
-	cp ~/.config/fish/config.fish ./stored
-	cp ~/.config/fish/fish_variables ./stored
+	cp -v ~/.config/fish/config.fish ./backup
+	cp -v ~/.config/fish/fish_variables ./backup
 load-fish: unzip
 	echo "Restoring Fish Config..."
-	mkdir -p ~/.config/fish
-	cp ./stored/config.fish ~/.config/fish/config.fish
-	cp ./stored/fish_variables ~/.config/fish/fish_variables
+	mkdir -v -p ~/.config/fish
+	cp -v ./backup/config.fish ~/.config/fish/config.fish
+	cp -v ./backup/fish_variables ~/.config/fish/fish_variables
 
 save-vim: init-save-dir
 	echo "Saving Vim Config..."
-	cp ~/.config/nvim/init.vim ./stored
-	cp -r ~/.config/nvim/autoload ./stored
+	cp -v ~/.config/nvim/init.vim ./backup
+	cp -v -r ~/.config/nvim/autoload ./backup
 load-vim: unzip
 	echo "Restoring Vim Config..."
 	mkdir -p ~/.config/nvim
-	cp ./stored/init.vim ~/.config/nvim/init.vim
-	cp -r ./stored/autoload ~/.config/nvim/autoload
-	ln -s ~/.config/nvim/init.vim ~/.vimrc 
-	mkdir -p ~/.vim
-	ln -s ~/.config/nvim/autoload ~/.vim/autoload
+	cp -v ./backup/init.vim ~/.config/nvim/init.vim
+	cp -v -r ./backup/autoload ~/.config/nvim/autoload
+	ln -v -s ~/.config/nvim/init.vim ~/.vimrc 
+	mkdir -v -p ~/.vim
+	ln -v -s ~/.config/nvim/autoload ~/.vim/autoload
 
 save-bash: init-save-dir
 	echo "Saving Bash Config..."
-	cp ~/.bashrc ./stored
-	cp ~/.profile ./stored
+	cp -v ~/.bashrc ./backup
+	cp -v ~/.profile ./backup
 load-bash: unzip
 	echo "Restoring Bash Config..."
-	cp ./stored/.bashrc ~/.bashrc
-	cp ./stored/.profile ~/.profile
+	cp -v ./backup/.bashrc ~/.bashrc
+	cp -v ./backup/.profile ~/.profile
 
 init-save-dir:
-	mkdir -p ./stored
-zip:
-	zip -9 -r stored.zip ./stored
+	mkdir -p -v ./backup
+zip: save
+	zip -9 -r backup.zip ./backup
 unzip:
-	unzip stored.zip -d .
+	unzip backup.zip -d .
+
+upload: zip
+	curl -X POST https://content.dropboxapi.com/2/files/upload \
+		--header "Authorization: Bearer $(DROPBOX_ACCESS_TOKEN)" \
+		--header "Dropbox-API-Arg: {\"path\": \"/dotfiles-backup.zip\",\"mode\": \"overwrite\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}" \
+		--header "Content-Type: application/octet-stream" \
+		--data-binary @backup.zip
+download:
+	curl -X POST https://content.dropboxapi.com/2/files/download \
+		--header "Authorization: Bearer $(DROPBOX_ACCESS_TOKEN)" \
+		--header "Dropbox-API-Arg: {\"path\": \"/dotfiles-backup.zip\"}" \
+		-o backup.zip
